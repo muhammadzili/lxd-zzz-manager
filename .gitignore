@@ -1,0 +1,21 @@
+System Files
+
+.DS_Store
+Thumbs.db
+
+Logs & Temp
+
+*.log
+*.tmp
+temp/
+
+IDE Settings
+
+.vscode/
+.idea/
+
+SSH Keys (Safety first!)
+
+id_rsa
+id_rsa.pub
+*.pem
