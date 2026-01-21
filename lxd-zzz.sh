@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ==========================================
-#   LXD Zzz VPS MANAGER v1.1
+#   LXD Zzz VPS MANAGER v1.2
 #   Copyright (c) Muhammad Zili
 #   Automated LXD Container Creator
 # ==========================================
 
-# Warna biar ganteng (Disederhanakan penggunaannya)
+# Warna
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -14,10 +14,10 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Trap Ctrl+C agar exit rapi
+# Trap Ctrl+C
 trap "echo -e '\n${RED}[!] Script dihentikan user.${NC}'; exit" SIGINT
 
-# --- FUNGSI LOADING ANIMATION ---
+# --- FUNGSI LOADING ---
 spinner() {
     local pid=$1
     local delay=0.1
@@ -33,9 +33,8 @@ spinner() {
     printf "    \b\b\b\b"
 }
 
-# --- FUNGSI CEK & INSTALL LXD ---
+# --- FUNGSI CEK LXD ---
 function check_lxd_status() {
-    # 1. Cek apakah LXD terinstall
     if ! command -v lxd &> /dev/null; then
         echo -e "${YELLOW}[!] LXD tidak ditemukan. Menginstall LXD...${NC}"
         apt-get update > /dev/null 2>&1
@@ -48,26 +47,23 @@ function check_lxd_status() {
         fi
     fi
 
-    # 2. Cek apakah LXD sudah di-init
     if ! lxc list &> /dev/null; then
         echo -e "\n${YELLOW}[!] LXD belum diinisialisasi.${NC}"
         echo -e "Script akan menjalankan 'lxd init'. Tekan ${GREEN}ENTER${NC} untuk opsi default."
-        echo -e "Penting: Pilih 'yes' saat ditanya 'Create a new zfs pool?'."
         read -p "Tekan Enter untuk memulai..."
         lxd init
-        echo -e "\n${GREEN}[OK] Selesai.${NC}"
     fi
 }
 
 function show_header() {
     clear
     echo -e "${CYAN}=================================================${NC}"
-    echo -e "${YELLOW}           LXD Zzz - VPS MANAGER v1.1            ${NC}"
+    echo -e "${YELLOW}           LXD Zzz - VPS MANAGER v1.2            ${NC}"
     echo -e "${CYAN}=================================================${NC}"
     echo ""
 }
 
-# --- MENU: BUAT VPS ---
+# --- MENU 1: BUAT VPS ---
 function buat_vps() {
     show_header
     echo -e "${GREEN}[ BUAT VPS BARU ]${NC}"
@@ -175,12 +171,10 @@ function buat_vps() {
     main_menu
 }
 
-# --- MENU: KELOLA VPS ---
+# --- MENU 2: KELOLA VPS (Updated v1.2) ---
 function kelola_vps() {
     show_header
     echo -e "${GREEN}[ KELOLA VPS ]${NC}"
-    echo -e "Daftar VPS:"
-    # Tampilan list lebih bersih (Nama, Status, IPv4)
     lxc list -c n,s,4 | grep RUNNING
     echo ""
     
@@ -188,78 +182,87 @@ function kelola_vps() {
     echo -e "2. Start VPS"
     echo -e "3. Stop VPS"
     echo -e "4. Restart VPS"
-    echo -e "5. Kembali"
-    read -p "Pilih [1-5]: " OPSI_KELOLA
+    echo -e "5. Limit Bandwidth ${YELLOW}(v1.2)${NC}"
+    echo -e "6. Reinstall OS ${YELLOW}(v1.2)${NC}"
+    echo -e "7. Kembali"
+    read -p "Pilih [1-7]: " OPSI_KELOLA
 
     case $OPSI_KELOLA in
         1)
             read -p "Nama VPS: " TARGET
-            lxc info "$TARGET" | head -n 20 # Batasi output biar ga kepanjangan
+            echo -e "${BLUE}--- Informasi Detail $TARGET ---${NC}"
+            lxc info "$TARGET" | grep -v "Snapshots" | head -n 30
             ;;
         2)
             read -p "Nama VPS: " TARGET
+            echo -n "Starting... "
             lxc start "$TARGET" && echo -e "${GREEN}OK${NC}" || echo -e "${RED}Gagal${NC}"
             ;;
         3)
             read -p "Nama VPS: " TARGET
+            echo -n "Stopping... "
             lxc stop "$TARGET" && echo -e "${GREEN}OK${NC}" || echo -e "${RED}Gagal${NC}"
             ;;
         4)
             read -p "Nama VPS: " TARGET
+            echo -n "Restarting... "
             lxc restart "$TARGET" && echo -e "${GREEN}OK${NC}" || echo -e "${RED}Gagal${NC}"
             ;;
-        5) main_menu ;;
+        5)
+            # FITUR LIMIT BANDWIDTH
+            read -p "Nama VPS Target: " TARGET
+            echo -e "${CYAN}Format: 10Mbit, 100Mbit, 1Gbit (Kosongkan utk Unlimited)${NC}"
+            read -p "Limit Download (Ingress): " LIMIT_IN
+            read -p "Limit Upload (Egress): " LIMIT_OUT
+            
+            # Cek device eth0, override jika perlu
+            if [[ -n "$LIMIT_IN" ]]; then
+                lxc config device override "$TARGET" eth0 limits.ingress="$LIMIT_IN" 2>/dev/null || \
+                lxc config device set "$TARGET" eth0 limits.ingress="$LIMIT_IN" 2>/dev/null || \
+                echo -e "${YELLOW}Info: Device eth0 di-override dari profile default.${NC}" && \
+                lxc config device add "$TARGET" eth0 nic nictype=bridged parent=lxdbr0 limits.ingress="$LIMIT_IN"
+            fi
+
+            if [[ -n "$LIMIT_OUT" ]]; then
+                lxc config device override "$TARGET" eth0 limits.egress="$LIMIT_OUT" 2>/dev/null || \
+                lxc config device set "$TARGET" eth0 limits.egress="$LIMIT_OUT" 2>/dev/null || \
+                lxc config device add "$TARGET" eth0 nic nictype=bridged parent=lxdbr0 limits.egress="$LIMIT_OUT"
+            fi
+            echo -e "${GREEN}Bandwidth limit diterapkan!${NC}"
+            ;;
+        6)
+            # FITUR REINSTALL OS
+            read -p "Nama VPS Target: " TARGET
+            echo -e "${RED}[WARNING] Semua data di dalam VPS $TARGET akan HILANG!${NC}"
+            echo -e "Config (IP, Port, Limit) akan tetap tersimpan."
+            read -p "Ketik 'YES' untuk lanjut: " CONFIRM
+            if [[ "$CONFIRM" == "YES" ]]; then
+                echo -n "Reinstalling (Ubuntu 22.04)... "
+                lxc rebuild ubuntu:22.04 "$TARGET" > /dev/null 2>&1
+                if [ $? -eq 0 ]; then
+                    echo -e "${GREEN}Sukses!${NC}"
+                    echo -e "Mereset password root..."
+                    # Perlu fix config ssh lagi krn file baru
+                    lxc exec "$TARGET" -- rm -f /etc/ssh/sshd_config.d/50-cloud-init.conf
+                    lxc exec "$TARGET" -- sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+                    lxc exec "$TARGET" -- sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+                    lxc exec "$TARGET" -- systemctl restart ssh
+                    lxc exec "$TARGET" -- passwd root
+                else
+                    echo -e "${RED}Gagal Rebuild.${NC}"
+                fi
+            else
+                echo "Dibatalkan."
+            fi
+            ;;
+        7) main_menu ;;
         *) kelola_vps ;;
     esac
     read -p "Enter untuk lanjut..."
     kelola_vps
 }
 
-# --- MENU: BACKUP & RESTORE ---
-function backup_restore() {
-    show_header
-    echo -e "${GREEN}[ BACKUP & RESTORE ]${NC}"
-    echo -e "1. Buat Snapshot"
-    echo -e "2. Restore Snapshot"
-    echo -e "3. List Snapshot"
-    echo -e "4. Kembali"
-    read -p "Pilih [1-4]: " OPSI_BACKUP
-
-    case $OPSI_BACKUP in
-        1)
-            lxc list -c n,s | grep RUNNING
-            echo ""
-            read -p "Target VPS: " TARGET
-            read -p "Nama Backup (cth: backup1): " SNAP_NAME
-            # Validasi nama snapshot (hilangkan spasi jika ada)
-            SNAP_NAME=${SNAP_NAME// /_}
-            echo -n "Memproses... "
-            lxc snapshot "$TARGET" "$SNAP_NAME" && echo -e "${GREEN}Sukses!${NC}" || echo -e "${RED}Gagal!${NC}"
-            ;;
-        2)
-            read -p "Target VPS: " TARGET
-            lxc info "$TARGET" | grep "Snapshots:" -A 10
-            echo ""
-            read -p "Nama Backup utk Restore: " SNAP_NAME
-            echo -e "${RED}Data akan kembali ke titik backup!${NC}"
-            read -p "Lanjut? (y/n): " SURE
-            if [[ "$SURE" == "y" ]]; then
-                lxc restore "$TARGET" "$SNAP_NAME" && echo -e "${GREEN}Sukses!${NC}" || echo -e "${RED}Gagal!${NC}"
-            fi
-            ;;
-        3)
-            read -p "Target VPS: " TARGET
-            echo "Daftar Backup:"
-            lxc info "$TARGET" | grep "Snapshots:" -A 20
-            ;;
-        4) main_menu ;;
-        *) backup_restore ;;
-    esac
-    read -p "Enter untuk lanjut..."
-    backup_restore
-}
-
-# --- MENU: TAMBAH PORT ---
+# --- MENU 3: TAMBAH PORT ---
 function tambah_port() {
     show_header
     echo -e "${GREEN}[ TAMBAH PORT ]${NC}"
@@ -292,7 +295,50 @@ function tambah_port() {
     main_menu
 }
 
-# --- MENU: HAPUS VPS ---
+# --- MENU 4: BACKUP & RESTORE ---
+function backup_restore() {
+    show_header
+    echo -e "${GREEN}[ BACKUP & RESTORE ]${NC}"
+    echo -e "1. Buat Snapshot"
+    echo -e "2. Restore Snapshot"
+    echo -e "3. List Snapshot"
+    echo -e "4. Kembali"
+    read -p "Pilih [1-4]: " OPSI_BACKUP
+
+    case $OPSI_BACKUP in
+        1)
+            lxc list -c n,s | grep RUNNING
+            echo ""
+            read -p "Target VPS: " TARGET
+            read -p "Nama Backup (cth: backup1): " SNAP_NAME
+            SNAP_NAME=${SNAP_NAME// /_}
+            echo -n "Memproses... "
+            lxc snapshot "$TARGET" "$SNAP_NAME" && echo -e "${GREEN}Sukses!${NC}" || echo -e "${RED}Gagal!${NC}"
+            ;;
+        2)
+            read -p "Target VPS: " TARGET
+            lxc info "$TARGET" | grep "Snapshots:" -A 10
+            echo ""
+            read -p "Nama Backup utk Restore: " SNAP_NAME
+            echo -e "${RED}Data akan kembali ke titik backup!${NC}"
+            read -p "Lanjut? (y/n): " SURE
+            if [[ "$SURE" == "y" ]]; then
+                lxc restore "$TARGET" "$SNAP_NAME" && echo -e "${GREEN}Sukses!${NC}" || echo -e "${RED}Gagal!${NC}"
+            fi
+            ;;
+        3)
+            read -p "Target VPS: " TARGET
+            echo "Daftar Backup:"
+            lxc info "$TARGET" | grep "Snapshots:" -A 20
+            ;;
+        4) main_menu ;;
+        *) backup_restore ;;
+    esac
+    read -p "Enter untuk lanjut..."
+    backup_restore
+}
+
+# --- MENU 5: HAPUS VPS ---
 function hapus_vps() {
     show_header
     echo -e "${RED}[ HAPUS VPS ]${NC}"
@@ -314,7 +360,6 @@ function hapus_vps() {
     fi
 
     echo -e "Membersihkan..."
-    # Auto clean firewall ports
     PORTS=$(lxc config device show "$VPS_NAME" | grep "listen: tcp:0.0.0.0" | awk -F: '{print $NF}' | tr -d ' ')
 
     if [ -n "$PORTS" ]; then
@@ -331,9 +376,8 @@ function hapus_vps() {
 
 function main_menu() {
     show_header
-    # Tampilan menu bersih tanpa tag warna-warni berlebih
     echo -e "1. Buat VPS Baru"
-    echo -e "2. Kelola VPS (Start/Stop/Info)"
+    echo -e "2. Kelola VPS (Limit/Reinstall/Info)"
     echo -e "3. Tambah Port (Forwarding)"
     echo -e "4. Backup & Restore (Snapshot)"
     echo -e "5. Hapus VPS"
