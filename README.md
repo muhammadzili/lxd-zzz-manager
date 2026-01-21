@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Language-Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white" />
   <img src="https://img.shields.io/badge/Virtualization-LXD/LXC-E95420?style=for-the-badge&logo=linux-containers&logoColor=white" />
   <img src="https://img.shields.io/badge/License-MIT-007EC6?style=for-the-badge&logo=open-source-initiative&logoColor=white" />
-  <img src="https://img.shields.io/badge/Version-1.0-FFD700?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Version-1.2-FFD700?style=for-the-badge" />
 </p>
 
 ---
