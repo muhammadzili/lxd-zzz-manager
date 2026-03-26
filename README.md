@@ -9,55 +9,52 @@
 
 ---
 
-## 🧭 Tentang Repositori
+## 🧭 About the Repository
 
-**LXD Zzz Manager** adalah tool **CLI (Command Line Interface)** berbasis **Bash Script** yang dirancang untuk mengotomatisasi manajemen VPS menggunakan teknologi **LXD/LXC** pada server Ubuntu atau Debian.
+**LXD Zzz Manager** is a **Bash Script**-based **CLI (Command Line Interface)** tool designed to automate VPS management using **LXD/LXC** technology on Ubuntu or Debian servers.
 
-Script ini memungkinkan satu server **Dedicated / VPS besar (Host)** dipecah menjadi beberapa **VPS kecil (Container)** yang terisolasi, lengkap dengan:
-- Limitasi resource (RAM, CPU, Disk)
-- Akses SSH independen
-- Port forwarding otomatis
-
----
-
-## ⚙️ Masalah & Solusi
-
-### ❌ Masalah
-Manajemen container LXD secara manual cukup ribet:
-- Menjalankan `lxd launch`
-- Set RAM, CPU, Disk satu per satu
-- Mapping port dengan iptables / proxy
-- Edit konfigurasi SSH agar bisa login password
-
-### ✅ Solusi
-**LXD Zzz Manager** menyederhanakan semuanya **cukup 1 klik**:
-- Pilih menu
-- Masukkan data
-- VPS langsung siap digunakan 🚀
+This script allows a single **Dedicated / Large VPS (Host)** to be split into several isolated **Small VPS (Containers)**, complete with:
+- Resource limits (RAM, CPU, Disk)
+- Independent SSH access
+- Automatic port forwarding
 
 ---
 
-## 🚀 Fitur Utama
+## ⚙️ Problems & Solutions
 
-- 🖥️ **Menu Interaktif**
+### ❌ Problem
+Manually managing LXD containers is quite complicated:
+- Running `lxd launch`
+- Setting RAM, CPU, and Disk one by one
+- Port mapping with iptables / proxy
+- Editing SSH configuration to allow password login
+
+### ✅ Solution
+**LXD Zzz Manager** simplifies everything with just **one click**:
+- Select a menu
+- Enter the data
+- The VPS is ready to use immediately 🚀
+
+---
+
+## 🚀 Key Features
+
+- 🖥️ **Interactive Menu**
 - 📦 **Auto Install LXD**
 - ⚡ **Resource Limiter**
 - 🔒 **SSH Port Forwarding**
-- 🛡️ **Auto Firewall (UFW)**
-- 🔑 **Auto Fix SSH Login**
-- 🐧 **Multi-OS Support**
 
 ---
 
-## 🛠️ Prasyarat (Host System)
+## 🛠️ Prerequisites (Host System)
 
-- OS: Ubuntu 20.04 / 22.04 LTS atau Debian 11  
+- OS: Ubuntu 20.04 / 22.04 LTS or Debian 11  
 - User: Root  
 - Virtualization: LXD supported
 
 ---
 
-## 📦 Cara Install & Penggunaan
+## 📦 Installation & Usage Guide
 
 ```bash
 wget https://raw.githubusercontent.com/muhammadzili/lxd-zzz-manager/main/lxd-zzz.sh
@@ -67,6 +64,6 @@ chmod +x lxd-zzz.sh
 
 ---
 
-## 📜 Lisensi
+## 📜 License
 
 MIT License
